@@ -1,227 +1,247 @@
-import React, { useRef, useEffect, useState } from 'react';
+// src/App.js
+import React, { useEffect, useRef, useState } from 'react';
 import Webcam from 'react-webcam';
 import * as faceapi from 'face-api.js';
+import test from './assets/sunglass-test1.png';
 
 const App = () => {
   const webcamRef = useRef(null);
-  const canvasRef = useRef(null);
-  const [initialized, setInitialized] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // بارگذاری مدل‌های مورد نیاز face-api
+  const [eyePosition, setEyePosition] = useState({ left: 0, top: 0 });
+  const [angle, setAngle] = useState(0);
+  const [glassesWidth, setGlassesWidth] = useState(0);
+
   useEffect(() => {
     const loadModels = async () => {
-      const MODEL_URL = '/models';
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
-      setInitialized(true);
+      await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+      await faceapi.nets.faceLandmark68Net.loadFromUri('/models');
+      setLoading(false);
     };
     loadModels();
   }, []);
 
-  // تابعی برای تشخیص چهره
-  const detectFace = async () => {
+  const detectFaces = async () => {
     if (webcamRef.current && webcamRef.current.video.readyState === 4) {
       const video = webcamRef.current.video;
-      const displaySize = { width: video.videoWidth, height: video.videoHeight };
-      faceapi.matchDimensions(canvasRef.current, displaySize);
-
       const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
-      const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
-      canvasRef.current.getContext('2d').clearRect(0, 0, displaySize.width, displaySize.height);
-      faceapi.draw.drawDetections(canvasRef.current, resizedDetections);
-      faceapi.draw.drawFaceLandmarks(canvasRef.current, resizedDetections);
+      if (detections.length > 0) {
+        // console.log("left", video.getBoundingClientRect().left);
+
+        // console.log("width", video.getBoundingClientRect().width);
+        let scale = 600 / video.getBoundingClientRect().width
+        // console.log("scale", scale);
+
+
+        // console.log('x', detections[0].landmarks.getNose()[0].x);
+
+
+        const landmarks = detections[0].landmarks;
+        const leftEye = landmarks.getLeftEye();
+        const rightEye = landmarks.getRightEye();
+        const eyeDistance = (rightEye[3].x - leftEye[0].x)
+        const glassesWidth = (eyeDistance * 1.6) / scale;
+        setGlassesWidth(glassesWidth);
+
+        const deltaX = rightEye[3].x - leftEye[0].x;
+        const deltaY = rightEye[3].y - leftEye[0].y;
+
+        const angleCl = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+        setAngle(angleCl)
+
+        // console.log("asasas", detections[0].landmarks.getNose()[0].y);
+
+        // console.log('sum', video.getBoundingClientRect().left + ((leftEye[0].x + rightEye[3].x) / 2 * scale) - 20);
+        // console.log('sum', video.getBoundingClientRect().left + (detections[0].landmarks.getNose()[0].x / scale) - 20);
+
+        setEyePosition({
+          left: video.getBoundingClientRect().left + ((leftEye[0].x + rightEye[3].x) / (2 * scale)) - (15 / scale) - (glassesWidth / 2),
+          top: (detections[0].landmarks.getNose()[0].y / scale) - (25 / scale),
+        });
+
+
+
+      }
     }
   };
 
-  // اجرای تشخیص چهره هر 100 میلی‌ثانیه
   useEffect(() => {
-    if (initialized) {
-      const interval = setInterval(detectFace, 500);
-      return () => clearInterval(interval);
-    }
-  }, [initialized]);
+    const interval = setInterval(detectFaces, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div style={{ width: '100%', height: 'auto' }}>
-      <Webcam
-        ref={webcamRef}
-        audio={false}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: 'auto',
-        }}
-      />
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: 'auto',
-        }}
-      />
+    <div style={{ display: "flex", justifyContent: "center" }}>
+      {loading ? (
+        <p>Loading models...</p>
+      ) : (
+        <>
+          <Webcam ref={webcamRef} style={{ width: '100%', maxWidth: '600px' }} />
+          <img
+            id='glasses'
+            src={test}
+            alt="Glasses"
+            style={{
+              position: 'absolute',
+              left: `${eyePosition.left}px`,
+              top: `${eyePosition.top}px`,
+              width: `${glassesWidth}px`,
+              transform: `rotate(${angle}deg)`,
+              pointerEvents: 'none',
+            }}
+          />
+        </>
+      )}
     </div>
   );
 };
 
 export default App;
 
-// import React, { useRef, useEffect, useCallback } from 'react';
+
+
+// import React, { useRef, useEffect, useState } from 'react';
 // import Webcam from 'react-webcam';
-// import * as faceDetection from '@tensorflow-models/face-detection';
-// import '@tensorflow/tfjs-backend-webgl';
+// import * as faceapi from 'face-api.js';
+// import test from './assets/sunglass-test1.png';
 
 // const App = () => {
 //   const webcamRef = useRef(null);
+//   const [initialized, setInitialized] = useState(false);
+//   const [eyePosition, setEyePosition] = useState({ left: 0, top: 0 });
+//   const [angle, setAngle] = useState(0);
+//   const [glassesWidth, setGlassesWidth] = useState(0);
+//   const [isLoaded, setIsLoaded] = useState(false);
+
 //   const canvasRef = useRef(null);
 
 //   useEffect(() => {
-//     const loadModelAndStartDetection = async () => {
-//       // مدل را بارگذاری کنید
-//       // const model = await faceDetection.load(faceDetection.SupportedModels.MediaPipeFaceDetector, {
-//       //   runtime: 'tfjs',
-//       // });
-//       const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
-//       const detectorConfig = {
-//         runtime: 'tfjs', // or 'tfjs'
-//       }
-//       const detector = await faceDetection.createDetector(model, detectorConfig);
-
-//       // شروع به تشخیص چهره کنید
-//       detectFace(detector);
+//     const loadModels = async () => {
+//       const MODEL_URL = '/models';
+//       await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+//       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+//       setInitialized(true);
 //     };
-
-//     loadModelAndStartDetection();
+//     loadModels();
 //   }, []);
 
-//   const detectFace = useCallback(async (model) => {
-//     if (webcamRef.current && canvasRef.current) {
+
+
+//   const detectFace = async () => {
+//     if (initialized && webcamRef.current && webcamRef.current.video.readyState === 4) {
 //       const video = webcamRef.current.video;
-//       const canvas = canvasRef.current;
-//       const context = canvas.getContext('2d');
 
-//       const detectionLoop = async () => {
-//         if (video.readyState === 4) {
-//           const faces = await model.estimateFaces(video);
+//       const displaySize = { width: video.videoWidth, height: video.videoHeight };
+//       const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+//       const resizedDetections = faceapi.resizeResults(detections, displaySize);
 
-//           console.log(faces);
-
-//           // بوم را پاکسازی کنید
-//           // context.clearRect(0, 0, canvas.width, canvas.height);
+//       if (resizedDetections.length > 0) {
+//         const landmarks = resizedDetections[0].landmarks;
+//         const leftEye = landmarks.getLeftEye();
+//         const rightEye = landmarks.getRightEye();
 
 
-//           // چهره‌ها را رسم کنید
-//           // faces.forEach((face) => {
-//           //   const { topLeft, bottomRight } = face.boundingBox;
-//           //   context.strokeStyle = 'red';
-//           //   context.lineWidth = 2;
-//           //   context.strokeRect(topLeft[0], topLeft[1], bottomRight[0] - topLeft[0], bottomRight[1] - topLeft[1]);
-//           // });
-//         }
+//         const scaleX = window.innerWidth / video.videoWidth;
+//         const scaleY = window.innerHeight / video.videoHeight;
 
-//         requestAnimationFrame(detectionLoop);
-//       };
+//         const eyeDistance = (rightEye[3].x - leftEye[0].x) * scaleX
 
-//       detectionLoop();
+//         const glassesWidth = eyeDistance * 1.2;
+
+
+//         // const glassesWidth = eyeDistance;
+//         console.log("x", landmarks.getNose()[0].x);
+
+//         console.log("x-eye", (rightEye[3].x + leftEye[0].x) / 2);
+//         console.log("x_scale", landmarks.getNose()[0].x * scaleX);
+
+//         // console.log("x_scale", landmarks.getNose()[0].x / scaleX);
+
+
+//         console.log("scaleX", scaleX);
+//         // console.log("scaleY", scaleY);
+//         // console.log("x/Y", scaleX / scaleY);
+
+//         // console.log("y", landmarks.getNose()[0].y);
+//         // console.log("Y_scale", landmarks.getNose()[0].y * scaleY);
+
+
+//         // console.log("eye", eyeDistance);
+
+//         // console.log("eye_scale", eyeDistance * scaleX);
+//         // console.log("width", glassesWidth);
+//         // console.log("scalex", scaleX);
+
+//         // console.log("13", document.getElementById("video").videoHeight);
+
+//         // console.log("top", webcamRef.current.video.getBoundingClientRect());
+//         // console.log("top2", video.videoHeight);
+//         // console.log("top4", video.videoWidth);
+
+//         // console.log("top3", (webcamRef.current.video.getBoundingClientRect().height - video.videoHeight) / 2);
+
+
+
+//         const deltaX = rightEye[3].x - leftEye[0].x;
+//         const deltaY = rightEye[3].y - leftEye[0].y;
+
+//         const angleCl = Math.atan2(deltaY, deltaX) * (180 / Math.PI);
+//         setAngle(angleCl)
+
+//         setEyePosition({
+//           left: (landmarks.getNose()[0].x * scaleX) - (
+//             eyeDistance * Math.cos(Math.atan2(deltaY, deltaX)) / 2),
+//           top: (landmarks.getNose()[0].y),
+//         });
+//         setGlassesWidth(glassesWidth);
+//         setIsLoaded(true);
+//       }
 //     }
-//   }, []);
+//   };
+
+
+//   useEffect(() => {
+//     const interval = setInterval(detectFace, 5000);
+//     return () => clearInterval(interval);
+//   }, [initialized]);
 
 //   return (
-//     <div>
+//     <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", width: 'auto', height: 'auto' }}>
 //       <Webcam
 //         ref={webcamRef}
-//         // style={{ display: 'none' }}
 //         audio={false}
 //         screenshotFormat="image/jpeg"
-//         videoConstraints={{ facingMode: 'user' }}
+//         videoConstraints={{
+//           facingMode: "user",
+//           width: { ideal: 640 },
+//           height: { ideal: 360 },
+//         }}
+//         style={{
+//           width: '100%',
+//           height: "auto"
+//         }}
+//         id="video"
 //       />
-//       <canvas ref={canvasRef} width="640" height="480" />
+//       {isLoaded && (
+//         <img
+//           id='glasses'
+//           src={test}
+//           alt="Glasses"
+//           style={{
+//             position: 'absolute',
+//             left: `${eyePosition.left}px`,
+//             top: `${eyePosition.top}px`,
+//             width: `${glassesWidth}px`,
+//             transform: `rotate(${angle}deg)`,
+//             pointerEvents: 'none',
+//           }}
+//         />
+//       )}
+
+
 //     </div>
 //   );
 // };
 
 // export default App;
-
-
-
-// // import React, { useRef, useEffect } from 'react';
-// // import * as faceDetection from '@tensorflow-models/face-detection';
-// // import '@tensorflow/tfjs-backend-webgl';
-// // import Webcam from 'react-webcam';
-
-// // const App = () => {
-// //   const webcamRef = useRef(null);
-// //   const canvasRef = useRef(null);
-
-// //   useEffect(() => {
-// //     const loadModelAndStartCamera = async () => {
-// //       // مدل را بارگذاری کنید
-// //       // const model = await faceDetection.load(faceDetection.SupportedModels.MediaPipeFaceDetector, {
-// //       //   runtime: 'tfjs',
-// //       // });
-// //       const model = faceDetection.SupportedModels.MediaPipeFaceDetector;
-// //       const detectorConfig = {
-// //         runtime: 'tfjs', // or 'tfjs'
-// //       }
-// //       const detector = await faceDetection.createDetector(model, detectorConfig);
-
-// //       // دوربین را راه‌اندازی کنید
-// //       const stream = await navigator.mediaDevices.getUserMedia({
-// //         video: { facingMode: 'user' },
-// //       });
-// //       videoRef.current.srcObject = stream;
-
-// //       videoRef.current.onloadeddata = () => {
-// //         detectFace(detector);
-// //       };
-// //     };
-
-// //     loadModelAndStartCamera();
-// //   }, []);
-
-// //   const detectFace = async (model) => {
-// //     if (videoRef.current && canvasRef.current) {
-// //       const video = videoRef.current;
-// //       const canvas = canvasRef.current;
-// //       const context = canvas.getContext('2d');
-
-// //       const detectionLoop = async () => {
-// //         const faces = await model.estimateFaces(video);
-// //         context.clearRect(0, 0, canvas.width, canvas.height);
-
-// //         console.log(faces);
-
-// //         // faces.forEach((face) => {
-// //         //   const { topLeft, bottomRight } = face.boundingBox;
-// //         //   context.strokeStyle = 'red';
-// //         //   context.lineWidth = 2;
-// //         //   context.strokeRect(topLeft[0], topLeft[1], bottomRight[0] - topLeft[0], bottomRight[1] - topLeft[1]);
-// //         // });
-
-// //         requestAnimationFrame(detectionLoop);
-// //       };
-
-// //       detectionLoop();
-// //     }
-// //   };
-
-// //   return (
-// //     <div>
-// //       <Webcam
-// //         ref={webcamRef}
-// //         style={{ display: 'none' }}
-// //         audio={false}
-// //         screenshotFormat="image/jpeg"
-// //         videoConstraints={{ facingMode: 'user' }}
-// //       />
-// //       <canvas ref={canvasRef} width="640" height="480" />
-// //     </div>
-// //   );
-// // };
-
-// // export default App;
