@@ -67,7 +67,7 @@ const App = () => {
   };
 
   useEffect(() => {
-    const interval = setInterval(detectFaces, 5000);
+    const interval = setInterval(detectFaces, 100);
     return () => clearInterval(interval);
   }, []);
 
