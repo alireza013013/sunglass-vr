@@ -79,7 +79,7 @@ const Home = () => {
     };
 
     useEffect(() => {
-        const interval = setInterval(detectFaces, 500);
+        const interval = setInterval(detectFaces, 200);
         return () => clearInterval(interval);
     }, []);
 
@@ -114,7 +114,6 @@ const Home = () => {
                             width: `${glassesWidth}px`,
                             transform: `rotate(${angle}deg)`,
                             pointerEvents: 'none',
-                            transition: "all 0.5s"
                         }}
                     />
                     {
