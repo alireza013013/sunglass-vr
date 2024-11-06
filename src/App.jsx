@@ -2,10 +2,22 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './Home';
 
+const Login = () => {
+  return (
+    <div>
+      Test Page
+    </div>
+  )
+}
+
+
 const App = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/">
+          <Route index element={<Login />} />
+        </Route>
         <Route path="/home/:idglass" element={<Home />} />
         {/* <Route path="/home/:idglass">
           <Route index element={<Home />} />
