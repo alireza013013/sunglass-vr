@@ -6,9 +6,10 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/home/:idglass">
+        <Route path="/home/:idglass" element={<Home />} />
+        {/* <Route path="/home/:idglass">
           <Route index element={<Home />} />
-        </Route>
+        </Route> */}
       </Routes>
     </BrowserRouter>
   );
