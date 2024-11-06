@@ -6,7 +6,7 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/:idglass">
+        <Route path="/home/:idglass">
           <Route index element={<Home />} />
         </Route>
       </Routes>
