@@ -10,6 +10,13 @@ const Login = () => {
   )
 }
 
+const Dashboard = () => {
+  return (
+    <div>
+      a
+    </div>
+  )
+}
 
 const App = () => {
   return (
@@ -18,7 +25,10 @@ const App = () => {
         <Route path="/">
           <Route index element={<Login />} />
         </Route>
-        <Route path="/home/:idglass" element={<Home />} />
+        <Route path="/home" element={<Dashboard />}>
+          <Route index path=":idglass" element={<Home />} />
+        </Route>
+        {/* <Route path="/home/:idglass" element={<Home />} /> */}
         {/* <Route path="/home/:idglass">
           <Route index element={<Home />} />
         </Route> */}
